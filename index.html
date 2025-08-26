@@ -1,0 +1,243 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List</title>
+  <style>
+    body {
+      background-image: url('imagecopy.png');
+      background-repeat: no-repeat;
+      background-size: cover;
+      margin: 50px;
+      font-family: cursive;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      transition: background 0.3s, color 0.3s;
+    }
+    .container {
+      width: 400px;
+      min-height: 440px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+      border: 2px solid #c9c8c8;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+      transition: background 0.3s, color 0.3s;
+    }
+    .header {
+      font-size: 24px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .input-area {
+      display: flex;
+      gap: 10px;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #333;
+      font-family: cursive;
+    }
+    .input-area button {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: none;
+      background: black;
+      color: white;
+      cursor: pointer;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      background: rgba(255, 255, 255, 0.7);
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    li.completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .buttons {
+      display: flex;
+      gap: 5px;
+    }
+    .buttons button {
+      border: none;
+      padding: 5px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .buttons .delete {
+      background: red;
+      color: white;
+    }
+    .buttons .complete {
+      background: green;
+      color: white;
+    }
+    body.dark .container {
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: 2px solid #888;
+    }
+    body.dark li {
+      background: rgba(50, 50, 50, 0.7);
+      color: white;
+    }
+    body.dark .input-area input {
+      border: 1px solid #ccc;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    body.dark .input-area button {
+      background: white;
+      color: black;
+    }
+    .filters {
+      display: flex;
+      justify-content: space-around;
+    }
+    .filters button {
+      border: none;
+      padding: 5px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #333;
+      color: white;
+      transition: 0.3s;
+    }
+    body.dark .filters button {
+      background: #ddd;
+      color: black;
+    }
+    #toggleMode {
+      margin-top: 15px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #000, #444);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s, transform 0.2s;
+    }
+    #toggleMode:hover {
+      transform: scale(1.05);
+    }
+    body.dark #toggleMode {
+      background: linear-gradient(135deg, #fff, #ccc);
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">To-Do List</div>
+    <div class="input-area">
+      <input type="text" id="taskInput" placeholder="Enter a task...">
+      <button id="addBtn">Add</button>
+    </div>
+    <div class="filters">
+      <button id="allBtn">All</button>
+      <button id="activeBtn">Active</button>
+      <button id="completedBtn">Completed</button>
+    </div>
+    <ul id="taskList"></ul>
+    <button id="toggleMode">Toggle Dark/Light </button>
+  </div>
+  <script>
+    const taskInput = document.getElementById("taskInput");
+    const addBtn = document.getElementById("addBtn");
+    const taskList = document.getElementById("taskList");
+    const toggleModeBtn = document.getElementById("toggleMode");
+    let filter = "all";
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+      let filtered = tasks.filter(task => {
+        if (filter === "active") return !task.completed;
+        if (filter === "completed") return task.completed;
+        return true;
+      });
+      filtered.forEach((task, index) => {
+        const li = document.createElement("li");
+        if (task.completed) li.classList.add("completed");
+        li.innerHTML = `<span contenteditable="true">${task.text}</span>
+          <div class="buttons">
+            <button class="complete">✔</button>
+            <button class="delete">✖</button>
+          </div>`;
+        li.querySelector("span").addEventListener("blur", (e) => {
+          tasks[index].text = e.target.innerText;
+          saveTasks();
+        });
+        li.querySelector(".complete").addEventListener("click", () => {
+          tasks[index].completed = !tasks[index].completed;
+          saveTasks();
+          renderTasks();
+        });
+        li.querySelector(".delete").addEventListener("click", () => {
+          tasks.splice(index, 1);
+          saveTasks();
+          renderTasks();
+        });
+        taskList.appendChild(li);
+      });
+    }
+
+    function saveTasks() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    addBtn.addEventListener("click", () => {
+      const text = taskInput.value.trim();
+      if (text) {
+        tasks.push({ text, completed: false });
+        saveTasks();
+        renderTasks();
+        taskInput.value = "";
+      }
+    });
+
+    document.getElementById("allBtn").addEventListener("click", () => {
+      filter = "all";
+      renderTasks();
+    });
+    document.getElementById("activeBtn").addEventListener("click", () => {
+      filter = "active";
+      renderTasks();
+    });
+    document.getElementById("completedBtn").addEventListener("click", () => {
+      filter = "completed";
+      renderTasks();
+    });
+
+    toggleModeBtn.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+    });
+
+    renderTasks();
+  </script>
+</body>
+</html>
+
